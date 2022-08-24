@@ -12,6 +12,19 @@
 
 - Implemented `Eq` for `Timing` and `InputMap`.
 
+## Version 0.5.2
+
+### Bug fixes
+
+- Fixed gamepad axes not filtering out inputs outside of the axis deadzone.
+- Fixed `DualAxis::right_stick()` returning the y axis for the left stick.
+
+## Version 0.5.1
+
+### Bug fixes
+
+- removed a missed `println` statement spamming "real conflict" that had been missed
+
 ## Version 0.5
 
 ### Enhancements
