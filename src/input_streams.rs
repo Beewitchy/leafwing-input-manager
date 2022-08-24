@@ -3,7 +3,7 @@
 use bevy::input::{
     gamepad::{Gamepad, GamepadAxis, GamepadButton, GamepadEventRaw, Gamepads},
     keyboard::{KeyCode, KeyboardInput},
-    mouse::{MouseButton, MouseButtonInput, MouseMotion, MouseWheel},
+    mouse::{MouseButton, MouseButtonInput, MouseMotion, MouseScrollUnit, MouseWheel},
     Axis, Input,
 };
 use petitset::PetitSet;
@@ -147,6 +147,9 @@ impl<'a> InputStreams<'a> {
                 // FIXME: verify that this works and doesn't double count events
                 let mut event_reader = self.mouse_wheel.get_reader();
 
+                // Arbitary scale to make line & pixel events more similar
+                const PIXELS_PER_LINE: f32 = 14.0;
+
                 // PERF: this summing is computed for every individual input
                 // This should probably be computed once, and then cached / read
                 // Fix upstream!
@@ -156,7 +159,10 @@ impl<'a> InputStreams<'a> {
                         MouseWheelDirection::Left | MouseWheelDirection::Right => {
                             mouse_wheel_event.x
                         }
-                    }
+                    } * match mouse_wheel_event.unit {
+                        MouseScrollUnit::Line => PIXELS_PER_LINE,
+                        MouseScrollUnit::Pixel => 1.0,
+                    };
                 }
 
                 match mouse_wheel_direction {
@@ -262,11 +268,17 @@ impl<'a> InputStreams<'a> {
                         // FIXME: verify that this works and doesn't double count events
                         let mut event_reader = self.mouse_wheel.get_reader();
 
+                        // Arbitary scale to make line & pixel events more similar
+                        const PIXELS_PER_LINE: f32 = 14.0;
+
                         for mouse_wheel_event in event_reader.iter(self.mouse_wheel) {
                             total_mouse_wheel_movement += match axis_type {
                                 MouseWheelAxisType::X => mouse_wheel_event.x,
                                 MouseWheelAxisType::Y => mouse_wheel_event.y,
-                            }
+                            } * match mouse_wheel_event.unit {
+                                MouseScrollUnit::Line => PIXELS_PER_LINE,
+                                MouseScrollUnit::Pixel => 1.0,
+                            };
                         }
                         value_in_axis_range(single_axis, total_mouse_wheel_movement)
                     }
@@ -276,10 +288,10 @@ impl<'a> InputStreams<'a> {
                         // FIXME: verify that this works and doesn't double count events
                         let mut event_reader = self.mouse_motion.get_reader();
 
-                        for mouse_wheel_event in event_reader.iter(self.mouse_motion) {
+                        for mouse_motion_event in event_reader.iter(self.mouse_motion) {
                             total_mouse_motion_movement += match axis_type {
-                                MouseMotionAxisType::X => mouse_wheel_event.delta.x,
-                                MouseMotionAxisType::Y => mouse_wheel_event.delta.y,
+                                MouseMotionAxisType::X => mouse_motion_event.delta.x,
+                                MouseMotionAxisType::Y => mouse_motion_event.delta.y,
                             }
                         }
                         value_in_axis_range(single_axis, total_mouse_motion_movement)
