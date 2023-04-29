@@ -3,7 +3,7 @@
 use crate::action_state::ActionData;
 use crate::buttonlike::ButtonState;
 use crate::clashing_inputs::ClashStrategy;
-use crate::input_streams::InputStreams;
+use crate::input_streams::{InputStreams, PreparedInputStreams};
 use crate::user_input::{InputKind, Modifier, UserInput};
 use crate::Actionlike;
 
@@ -366,15 +366,22 @@ impl<A: Actionlike> InputMap<A> {
     ) -> Vec<ActionData> {
         let mut action_data = vec![ActionData::default(); A::n_variants()];
 
+        let mut prepared_input_streams = PreparedInputStreams::from(input_streams);
+        for action in A::variants() {
+            let action_input_map = self.get(action.clone());
+            prepared_input_streams.prepare_inputs(action_input_map.iter());
+        }
         // Generate the raw action presses
         for action in A::variants() {
             let mut inputs = Vec::new();
 
-            for input in self.get(action.clone()).iter() {
+            let action_input_map = self.get(action.clone());
+
+            for input in action_input_map.iter() {
                 let action = &mut action_data[action.index()];
 
                 // Merge axis pair into action data
-                let axis_pair = input_streams.input_axis_pair(input);
+                let axis_pair = prepared_input_streams.input_axis_pair(input);
                 if let Some(axis_pair) = axis_pair {
                     if let Some(current_axis_pair) = &mut action.axis_pair {
                         *current_axis_pair = current_axis_pair.merged_with(axis_pair);
@@ -383,10 +390,10 @@ impl<A: Actionlike> InputMap<A> {
                     }
                 }
 
-                if input_streams.input_pressed(input) {
+                if prepared_input_streams.input_pressed(input) {
                     inputs.push(input.clone());
 
-                    action.value += input_streams.input_value(input);
+                    action.value += prepared_input_streams.input_value(input);
                 }
             }
 

@@ -9,7 +9,7 @@
 
 use crate::axislike::{AxisType, MouseMotionAxisType, MouseWheelAxisType};
 use crate::buttonlike::{MouseMotionDirection, MouseWheelDirection};
-use crate::input_streams::{InputStreams, MutableInputStreams};
+use crate::input_streams::{InputStreams, MutableInputStreams, PreparedInputStreams};
 use crate::user_input::UserInput;
 
 use bevy::app::App;
@@ -312,14 +312,23 @@ impl MockInput for MutableInputStreams<'_> {
 
     fn pressed(&self, input: impl Into<UserInput>) -> bool {
         let input_streams: InputStreams = self.into();
-        input_streams.input_pressed(&input.into())
+
+        let mut prepared_input_streams = PreparedInputStreams::from(&input_streams);
+        let user_input = input.into();
+        prepared_input_streams.prepare_input(&user_input);
+
+        prepared_input_streams.input_pressed(&user_input)
     }
 
     fn pressed_for_gamepad(&self, input: impl Into<UserInput>, gamepad: Option<Gamepad>) -> bool {
         let mut input_streams: InputStreams = self.into();
         input_streams.associated_gamepad = gamepad;
 
-        input_streams.input_pressed(&input.into())
+        let mut prepared_input_streams = PreparedInputStreams::from(&input_streams);
+        let user_input = input.into();
+        prepared_input_streams.prepare_input(&user_input);
+
+        prepared_input_streams.input_pressed(&user_input)
     }
 
     fn reset_inputs(&mut self) {
@@ -377,7 +386,11 @@ impl MockInput for World {
     fn pressed_for_gamepad(&self, input: impl Into<UserInput>, gamepad: Option<Gamepad>) -> bool {
         let input_streams = InputStreams::from_world(self, gamepad);
 
-        input_streams.input_pressed(&input.into())
+        let mut prepared_input_streams = PreparedInputStreams::from(&input_streams);
+        let user_input = input.into();
+        prepared_input_streams.prepare_input(&user_input);
+
+        prepared_input_streams.input_pressed(&user_input)
     }
 
     fn reset_inputs(&mut self) {

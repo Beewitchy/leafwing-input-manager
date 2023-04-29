@@ -3,7 +3,7 @@
 use crate::action_state::ActionData;
 use crate::axislike::{VirtualAxis, VirtualDPad};
 use crate::input_map::InputMap;
-use crate::input_streams::InputStreams;
+use crate::input_streams::{InputStreams, PreparedInputStreams};
 use crate::user_input::{InputKind, UserInput};
 use crate::Actionlike;
 
@@ -98,9 +98,13 @@ impl<A: Actionlike> InputMap<A> {
         input_streams: &InputStreams,
         clash_strategy: ClashStrategy,
     ) {
-        for clash in self.get_clashes(action_data, input_streams) {
+        let mut prepared_input_streams = PreparedInputStreams::from(input_streams);
+
+        for clash in self.get_clashes(action_data, &mut prepared_input_streams) {
             // Remove the action in the pair that was overruled, if any
-            if let Some(culled_action) = resolve_clash(&clash, clash_strategy, input_streams) {
+            if let Some(culled_action) =
+                resolve_clash(&clash, clash_strategy, &prepared_input_streams)
+            {
                 action_data[culled_action.index()] = ActionData::default();
             }
         }
@@ -128,19 +132,20 @@ impl<A: Actionlike> InputMap<A> {
     fn get_clashes(
         &self,
         action_data: &[ActionData],
-        input_streams: &InputStreams,
+        prepared_input_streams: &mut PreparedInputStreams,
     ) -> Vec<Clash<A>> {
         let mut clashes = Vec::default();
 
         // We can limit our search to the cached set of possibly clashing actions
         for clash in self.possible_clashes() {
+            prepared_input_streams.prepare_inputs_from_clash(&clash);
             // Clashes can only occur if both actions were triggered
             // This is not strictly necessary, but saves work
             if action_data[clash.index_a].state.pressed()
                 && action_data[clash.index_b].state.pressed()
             {
                 // Check if the potential clash occurred based on the pressed inputs
-                if let Some(clash) = check_clash(&clash, input_streams) {
+                if let Some(clash) = check_clash(&clash, prepared_input_streams) {
                     clashes.push(clash)
                 }
             }
@@ -207,6 +212,13 @@ impl<A: Actionlike> Clash<A> {
             inputs_b: Vec::default(),
             _phantom: PhantomData::default(),
         }
+    }
+}
+
+impl<'a> PreparedInputStreams<'a> {
+    fn prepare_inputs_from_clash<'b, A: Actionlike>(&mut self, clash: &'b Clash<A>) {
+        self.prepare_inputs(clash.inputs_a.iter());
+        self.prepare_inputs(clash.inputs_b.iter());
     }
 }
 
@@ -309,20 +321,23 @@ fn chord_chord_clash(chord_a: &PetitSet<InputKind, 8>, chord_b: &PetitSet<InputK
 ///
 /// Returns `Some(clash)` if they are clashing, and `None` if they are not.
 #[must_use]
-fn check_clash<A: Actionlike>(clash: &Clash<A>, input_streams: &InputStreams) -> Option<Clash<A>> {
+fn check_clash<A: Actionlike>(
+    clash: &Clash<A>,
+    prepared_input_streams: &PreparedInputStreams,
+) -> Option<Clash<A>> {
     let mut actual_clash: Clash<A> = Clash::from_indexes(clash.index_a, clash.index_b);
 
     // For all inputs that were actually pressed that match action A
     for input_a in clash
         .inputs_a
         .iter()
-        .filter(|&input| input_streams.input_pressed(input))
+        .filter(|&input| prepared_input_streams.input_pressed(input))
     {
         // For all inputs that were actually pressed that match action B
         for input_b in clash
             .inputs_b
             .iter()
-            .filter(|&input| input_streams.input_pressed(input))
+            .filter(|&input| prepared_input_streams.input_pressed(input))
         {
             // If a clash was detected,
             if input_a.clashes(input_b) {
@@ -344,19 +359,19 @@ fn check_clash<A: Actionlike>(clash: &Clash<A>, input_streams: &InputStreams) ->
 fn resolve_clash<A: Actionlike>(
     clash: &Clash<A>,
     clash_strategy: ClashStrategy,
-    input_streams: &InputStreams,
+    prepared_input_streams: &PreparedInputStreams,
 ) -> Option<A> {
     // Figure out why the actions are pressed
     let reasons_a_is_pressed: Vec<&UserInput> = clash
         .inputs_a
         .iter()
-        .filter(|&input| input_streams.input_pressed(input))
+        .filter(|&input| prepared_input_streams.input_pressed(input))
         .collect();
 
     let reasons_b_is_pressed: Vec<&UserInput> = clash
         .inputs_b
         .iter()
-        .filter(|&input| input_streams.input_pressed(input))
+        .filter(|&input| prepared_input_streams.input_pressed(input))
         .collect();
 
     // Clashes are spurious if the actions are pressed for any non-clashing reason
@@ -578,22 +593,27 @@ mod tests {
             app.update();
 
             let input_streams = InputStreams::from_world(&app.world, None);
+            let mut prepared_input_streams = PreparedInputStreams::from(&input_streams);
+            prepared_input_streams.prepare_inputs_from_clash(&simple_clash);
 
             assert_eq!(
                 resolve_clash(
                     &simple_clash,
                     ClashStrategy::PrioritizeLongest,
-                    &input_streams,
+                    &prepared_input_streams,
                 ),
                 Some(One)
             );
 
             let reversed_clash = input_map.possible_clash(OneAndTwo, One).unwrap();
+            let mut prepared_input_streams = PreparedInputStreams::from(&input_streams);
+            prepared_input_streams.prepare_inputs_from_clash(&simple_clash);
+
             assert_eq!(
                 resolve_clash(
                     &reversed_clash,
                     ClashStrategy::PrioritizeLongest,
-                    &input_streams,
+                    &prepared_input_streams,
                 ),
                 Some(One)
             );
@@ -605,12 +625,14 @@ mod tests {
             app.update();
 
             let input_streams = InputStreams::from_world(&app.world, None);
+            let mut prepared_input_streams = PreparedInputStreams::from(&input_streams);
+            prepared_input_streams.prepare_inputs_from_clash(&chord_clash);
 
             assert_eq!(
                 resolve_clash(
                     &chord_clash,
                     ClashStrategy::PrioritizeLongest,
-                    &input_streams,
+                    &prepared_input_streams,
                 ),
                 Some(OneAndTwo)
             );
@@ -629,17 +651,26 @@ mod tests {
             app.update();
 
             let input_streams = InputStreams::from_world(&app.world, None);
+            let mut prepared_input_streams = PreparedInputStreams::from(&input_streams);
+            prepared_input_streams.prepare_inputs_from_clash(&simple_clash);
 
             assert_eq!(
-                resolve_clash(&simple_clash, ClashStrategy::UseActionOrder, &input_streams,),
+                resolve_clash(
+                    &simple_clash,
+                    ClashStrategy::UseActionOrder,
+                    &prepared_input_streams,
+                ),
                 Some(CtrlOne)
             );
+
+            let mut prepared_input_streams = PreparedInputStreams::from(&input_streams);
+            prepared_input_streams.prepare_inputs_from_clash(&reversed_clash);
 
             assert_eq!(
                 resolve_clash(
                     &reversed_clash,
                     ClashStrategy::UseActionOrder,
-                    &input_streams,
+                    &prepared_input_streams,
                 ),
                 Some(CtrlOne)
             );
