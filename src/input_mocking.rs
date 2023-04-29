@@ -19,7 +19,7 @@ use bevy::ecs::world::World;
 #[cfg(feature = "ui")]
 use bevy::ecs::{component::Component, query::With, system::Query};
 use bevy::input::gamepad::{GamepadAxisChangedEvent, GamepadButtonChangedEvent};
-use bevy::input::mouse::MouseScrollUnit;
+use bevy::input::mouse::{MouseScrollMomentumPhase, MouseScrollUnit};
 use bevy::input::ButtonState;
 use bevy::input::{
     gamepad::{Gamepad, GamepadButton, GamepadEvent},
@@ -174,21 +174,25 @@ impl MockInput for MutableInputStreams<'_> {
             match mouse_wheel_direction {
                 MouseWheelDirection::Left => self.mouse_wheel.send(MouseWheel {
                     unit: MouseScrollUnit::Pixel,
+                    momentum_phase: MouseScrollMomentumPhase::RegularMovement,
                     x: -1.0,
                     y: 0.0,
                 }),
                 MouseWheelDirection::Right => self.mouse_wheel.send(MouseWheel {
                     unit: MouseScrollUnit::Pixel,
+                    momentum_phase: MouseScrollMomentumPhase::RegularMovement,
                     x: 1.0,
                     y: 0.0,
                 }),
                 MouseWheelDirection::Up => self.mouse_wheel.send(MouseWheel {
                     unit: MouseScrollUnit::Pixel,
+                    momentum_phase: MouseScrollMomentumPhase::RegularMovement,
                     x: 0.0,
                     y: 1.0,
                 }),
                 MouseWheelDirection::Down => self.mouse_wheel.send(MouseWheel {
                     unit: MouseScrollUnit::Pixel,
+                    momentum_phase: MouseScrollMomentumPhase::RegularMovement,
                     x: 0.0,
                     y: -1.0,
                 }),
@@ -244,11 +248,13 @@ impl MockInput for MutableInputStreams<'_> {
                             // FIXME: MouseScrollUnit is not recorded and is always assumed to be Pixel
                             MouseWheelAxisType::X => self.mouse_wheel.send(MouseWheel {
                                 unit: MouseScrollUnit::Pixel,
+                                momentum_phase: MouseScrollMomentumPhase::RegularMovement,
                                 x: position_data,
                                 y: 0.0,
                             }),
                             MouseWheelAxisType::Y => self.mouse_wheel.send(MouseWheel {
                                 unit: MouseScrollUnit::Pixel,
+                                momentum_phase: MouseScrollMomentumPhase::RegularMovement,
                                 x: 0.0,
                                 y: position_data,
                             }),

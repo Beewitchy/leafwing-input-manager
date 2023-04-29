@@ -3,7 +3,7 @@
 use bevy::input::{
     gamepad::{Gamepad, GamepadAxis, GamepadButton, GamepadEvent, Gamepads},
     keyboard::{KeyCode, KeyboardInput, ScanCode},
-    mouse::{MouseButton, MouseButtonInput, MouseMotion, MouseScrollUnit, MouseWheel},
+    mouse::{MouseButton, MouseButtonInput, MouseMotion, MouseScrollMomentumPhase, MouseScrollUnit, MouseWheel},
     Axis, Input,
 };
 use petitset::PetitSet;
@@ -200,6 +200,9 @@ impl<'a> PreparedInputStreams<'a> {
         // todo: ellie (24.08.2022) - Make scroll wheel line-to-pixels scale configurable
         const PIXELS_PER_LINE: f32 = 14.0;
         for mouse_wheel_event in event_reader.iter(mouse_wheel) {
+            if mouse_wheel_event.momentum_phase == MouseScrollMomentumPhase::Momentum {
+                continue;
+            }
             self.total_mouse_wheel_movement += Vec2 {
                 x: mouse_wheel_event.x,
                 y: mouse_wheel_event.y,
