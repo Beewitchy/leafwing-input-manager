@@ -7,8 +7,8 @@ use bevy::app::App;
 use bevy::prelude::{FromReflect, Reflect, ReflectDeserialize, ReflectSerialize, TypePath, Vec2};
 use bevy::reflect::utility::{reflect_hasher, GenericTypePathCell, NonGenericTypeInfoCell};
 use bevy::reflect::{
-    erased_serde, FromType, GetTypeRegistration, ReflectFromPtr, ReflectKind, ReflectMut,
-    ReflectOwned, ReflectRef, TypeInfo, TypeRegistration, Typed, ValueInfo,
+    erased_serde, FromType, GetTypeRegistration, OpaqueInfo, ReflectFromPtr, ReflectKind,
+    ReflectMut, ReflectOwned, ReflectRef, TypeInfo, TypeRegistration, Typed,
 };
 use dyn_clone::DynClone;
 use dyn_eq::DynEq;
@@ -108,11 +108,38 @@ dyn_clone::clone_trait_object!(CustomDualAxisProcessor);
 dyn_eq::eq_trait_object!(CustomDualAxisProcessor);
 dyn_hash::hash_trait_object!(CustomDualAxisProcessor);
 
-impl Reflect for Box<dyn CustomDualAxisProcessor> {
+impl PartialReflect for Box<dyn CustomDualAxisProcessor> {
     fn get_represented_type_info(&self) -> Option<&'static TypeInfo> {
         Some(Self::type_info())
     }
 
+    fn apply(&mut self, value: &dyn Reflect) {
+        self.try_apply(value).unwrap()
+    }
+
+    fn try_apply(&mut self, value: &dyn Reflect) -> Result<(), bevy::reflect::ApplyError> {
+        let value = value.as_any();
+        if let Some(value) = value.downcast_ref::<Self>() {
+            *self = value.clone();
+            Ok(())
+        } else {
+            Err(bevy::reflect::ApplyError::MismatchedTypes {
+                from_type: self
+                    .reflect_type_ident()
+                    .unwrap_or_default()
+                    .to_string()
+                    .into_boxed_str(),
+                to_type: self
+                    .reflect_type_ident()
+                    .unwrap_or_default()
+                    .to_string()
+                    .into_boxed_str(),
+            })
+        }
+    }
+}
+
+impl Reflect for Box<dyn CustomDualAxisProcessor> {
     fn into_any(self: Box<Self>) -> Box<dyn Any> {
         self
     }
@@ -135,10 +162,6 @@ impl Reflect for Box<dyn CustomDualAxisProcessor> {
 
     fn as_reflect_mut(&mut self) -> &mut dyn Reflect {
         self
-    }
-
-    fn apply(&mut self, value: &dyn Reflect) {
-        self.try_apply(value).unwrap()
     }
 
     fn set(&mut self, value: Box<dyn Reflect>) -> Result<(), Box<dyn Reflect>> {
@@ -184,27 +207,6 @@ impl Reflect for Box<dyn CustomDualAxisProcessor> {
 
     fn debug(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(self, f)
-    }
-
-    fn try_apply(&mut self, value: &dyn Reflect) -> Result<(), bevy::reflect::ApplyError> {
-        let value = value.as_any();
-        if let Some(value) = value.downcast_ref::<Self>() {
-            *self = value.clone();
-            Ok(())
-        } else {
-            Err(bevy::reflect::ApplyError::MismatchedTypes {
-                from_type: self
-                    .reflect_type_ident()
-                    .unwrap_or_default()
-                    .to_string()
-                    .into_boxed_str(),
-                to_type: self
-                    .reflect_type_ident()
-                    .unwrap_or_default()
-                    .to_string()
-                    .into_boxed_str(),
-            })
-        }
     }
 }
 

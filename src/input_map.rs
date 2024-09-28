@@ -5,7 +5,7 @@ use std::hash::Hash;
 
 #[cfg(feature = "asset")]
 use bevy::asset::Asset;
-use bevy::prelude::{Component, Deref, DerefMut, Gamepad, Gamepads, Reflect, Resource};
+use bevy::prelude::{Component, Deref, DerefMut, Gamepad, Reflect, Resource};
 use bevy::utils::HashMap;
 use bevy::{log::error, prelude::ReflectComponent};
 use bevy::{

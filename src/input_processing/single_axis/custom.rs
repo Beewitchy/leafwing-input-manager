@@ -8,7 +8,7 @@ use bevy::prelude::{FromReflect, Reflect, ReflectDeserialize, ReflectSerialize, 
 use bevy::reflect::utility::{reflect_hasher, GenericTypePathCell, NonGenericTypeInfoCell};
 use bevy::reflect::{
     erased_serde, FromType, GetTypeRegistration, ReflectFromPtr, ReflectKind, ReflectMut,
-    ReflectOwned, ReflectRef, TypeInfo, TypeRegistration, Typed, ValueInfo,
+    ReflectOwned, ReflectRef, TypeInfo, TypeRegistration, Typed, OpaqueInfo,
 };
 use dyn_clone::DynClone;
 use dyn_eq::DynEq;

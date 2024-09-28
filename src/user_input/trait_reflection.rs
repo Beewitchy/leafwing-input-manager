@@ -12,7 +12,7 @@ use bevy::reflect::{
     utility::{reflect_hasher, GenericTypePathCell, NonGenericTypeInfoCell},
     FromReflect, FromType, GetTypeRegistration, Reflect, ReflectDeserialize, ReflectFromPtr,
     ReflectKind, ReflectMut, ReflectOwned, ReflectRef, ReflectSerialize, TypeInfo, TypePath,
-    TypeRegistration, Typed, ValueInfo,
+    TypeRegistration, Typed, OpaqueInfo,
 };
 
 use dyn_eq::DynEq;
@@ -86,19 +86,19 @@ mod buttonlike {
         }
 
         fn reflect_kind(&self) -> ReflectKind {
-            ReflectKind::Value
+            ReflectKind::Opaque
         }
 
         fn reflect_ref(&self) -> ReflectRef {
-            ReflectRef::Value(self)
+            ReflectRef::Opaque(self)
         }
 
         fn reflect_mut(&mut self) -> ReflectMut {
-            ReflectMut::Value(self)
+            ReflectMut::Opaque(self)
         }
 
         fn reflect_owned(self: Box<Self>) -> ReflectOwned {
-            ReflectOwned::Value(self)
+            ReflectOwned::Opaque(self)
         }
 
         fn clone_value(&self) -> Box<dyn Reflect> {
@@ -129,7 +129,7 @@ mod buttonlike {
     impl Typed for Box<dyn Buttonlike> {
         fn type_info() -> &'static TypeInfo {
             static CELL: NonGenericTypeInfoCell = NonGenericTypeInfoCell::new();
-            CELL.get_or_set(|| TypeInfo::Value(ValueInfo::new::<Self>()))
+            CELL.get_or_set(|| TypeInfo::Opaque(OpaqueInfo::new::<Self>()))
         }
     }
 
@@ -247,19 +247,19 @@ mod axislike {
         }
 
         fn reflect_kind(&self) -> ReflectKind {
-            ReflectKind::Value
+            ReflectKind::Opaque
         }
 
         fn reflect_ref(&self) -> ReflectRef {
-            ReflectRef::Value(self)
+            ReflectRef::Opaque(self)
         }
 
         fn reflect_mut(&mut self) -> ReflectMut {
-            ReflectMut::Value(self)
+            ReflectMut::Opaque(self)
         }
 
         fn reflect_owned(self: Box<Self>) -> ReflectOwned {
-            ReflectOwned::Value(self)
+            ReflectOwned::Opaque(self)
         }
 
         fn clone_value(&self) -> Box<dyn Reflect> {
@@ -290,7 +290,7 @@ mod axislike {
     impl Typed for Box<dyn Axislike> {
         fn type_info() -> &'static TypeInfo {
             static CELL: NonGenericTypeInfoCell = NonGenericTypeInfoCell::new();
-            CELL.get_or_set(|| TypeInfo::Value(ValueInfo::new::<Self>()))
+            CELL.get_or_set(|| TypeInfo::Opaque(OpaqueInfo::new::<Self>()))
         }
     }
 
@@ -408,19 +408,19 @@ mod dualaxislike {
         }
 
         fn reflect_kind(&self) -> ReflectKind {
-            ReflectKind::Value
+            ReflectKind::Opaque
         }
 
         fn reflect_ref(&self) -> ReflectRef {
-            ReflectRef::Value(self)
+            ReflectRef::Opaque(self)
         }
 
         fn reflect_mut(&mut self) -> ReflectMut {
-            ReflectMut::Value(self)
+            ReflectMut::Opaque(self)
         }
 
         fn reflect_owned(self: Box<Self>) -> ReflectOwned {
-            ReflectOwned::Value(self)
+            ReflectOwned::Opaque(self)
         }
 
         fn clone_value(&self) -> Box<dyn Reflect> {
@@ -451,7 +451,7 @@ mod dualaxislike {
     impl Typed for Box<dyn DualAxislike> {
         fn type_info() -> &'static TypeInfo {
             static CELL: NonGenericTypeInfoCell = NonGenericTypeInfoCell::new();
-            CELL.get_or_set(|| TypeInfo::Value(ValueInfo::new::<Self>()))
+            CELL.get_or_set(|| TypeInfo::Opaque(OpaqueInfo::new::<Self>()))
         }
     }
 
@@ -569,19 +569,19 @@ mod tripleaxislike {
         }
 
         fn reflect_kind(&self) -> ReflectKind {
-            ReflectKind::Value
+            ReflectKind::Opaque
         }
 
         fn reflect_ref(&self) -> ReflectRef {
-            ReflectRef::Value(self)
+            ReflectRef::Opaque(self)
         }
 
         fn reflect_mut(&mut self) -> ReflectMut {
-            ReflectMut::Value(self)
+            ReflectMut::Opaque(self)
         }
 
         fn reflect_owned(self: Box<Self>) -> ReflectOwned {
-            ReflectOwned::Value(self)
+            ReflectOwned::Opaque(self)
         }
 
         fn clone_value(&self) -> Box<dyn Reflect> {
@@ -612,7 +612,7 @@ mod tripleaxislike {
     impl Typed for Box<dyn TripleAxislike> {
         fn type_info() -> &'static TypeInfo {
             static CELL: NonGenericTypeInfoCell = NonGenericTypeInfoCell::new();
-            CELL.get_or_set(|| TypeInfo::Value(ValueInfo::new::<Self>()))
+            CELL.get_or_set(|| TypeInfo::Opaque(OpaqueInfo::new::<Self>()))
         }
     }
 

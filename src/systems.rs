@@ -11,7 +11,7 @@ use crate::{
 };
 
 use bevy::ecs::prelude::*;
-use bevy::prelude::Gamepads;
+use bevy::prelude::Gamepad;
 use bevy::{
     time::{Real, Time},
     utils::Instant,
@@ -114,7 +114,7 @@ pub fn accumulate_mouse_scroll(
 pub fn update_action_state<A: Actionlike>(
     input_store: Res<CentralInputStore>,
     clash_strategy: Res<ClashStrategy>,
-    gamepads: Res<Gamepads>,
+    gamepads: Query<(Entity, &Gamepad)>,
     action_state: Option<ResMut<ActionState<A>>>,
     input_map: Option<Res<InputMap<A>>>,
     mut query: Query<(&mut ActionState<A>, &InputMap<A>)>,
